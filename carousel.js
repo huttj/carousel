@@ -2,8 +2,8 @@
 
 const timing =  100;
 const container = document.getElementById('container');
-
-const count = 24;
+const pi = Math.PI;
+const count = 20;
 
 (function addImages() {
   container.innerHTML = Array.apply(0, Array(count)).map((n,i) => {
@@ -24,79 +24,56 @@ function calcDims() {
 calcDims();
 window.addEventListener('resize', calcDims);
 
-for (let k = 0; k < count / 2; k++) {
-  images.unshift(null);
-  images.unshift(null);
-}
+let s = 0;
 
-loop();
+document.body.addEventListener('dragstart', function (e) {
+  console.log('dragstart', e);
+  s = e.pageX / cardWidth;
+});
 
-function loop() {
-  requestAnimationFrame(()=>{
-    console.log('rendering forward loop');
-    render();
-    if (!images[0]) {
-      images.shift();
-      images.shift();
-      setTimeout(loop, timing);
+document.body.addEventListener('drag', function (e) {
+  console.log('drag', e);
+  s = e.pageX / cardWidth;
+  requestAnimationFrame(render);
+});
 
-    } else if (images.length <= count * 2 - 1) {
-      images.push(null);
-      images.push(null);
+document.body.addEventListener('dragend', function (e) {
+  console.log('dragend', e);
+  s = e.pageX / cardWidth;
+  render();
+});
 
-      setTimeout(loop, timing);
-    } else {
+render(0);
 
-      setTimeout(reverseloop, timing);
-    }
-  });
-}
 
-function reverseloop() {
-  requestAnimationFrame(()=> {
-    console.log('rendering reverse loop');
-    render();
-    if (!images[images.length - 1]) {
-      images.pop();
-      images.pop();
-      setTimeout(reverseloop, timing);
+function render(animate) {
+  console.log('rendering!');
 
-    } else if (images.length <= count * 2 - 1) {
-      images.unshift(null);
-      images.unshift(null);
-      setTimeout(reverseloop, timing);
-
-    } else {
-      setTimeout(loop, timing);
-    }
-  });
-}
-
-function render() {
   const n = images.length;
-  const unit = width / n;
+  const r = width / 2;
+  const h = n / 2;
+  const rt =
 
-  const r = n / 2;
+  images.map((img, i) => {
 
-  images.forEach((img, i) => {
+    const t = 2*pi/n;
 
-    if (img) {
-      const x = i;
-      const y = r - sqrt(sq(r - x));
+    const x = r-r*Math.cos(i*t + s);
+    const y = r*Math.sin(i*t + s);
 
-      //const z = cube(y / r);
-      const z = qrt(y/r);
+    const dx = x - cardWidth/1.5;
 
-      const dx0 = x * unit - (cardWidth / 2);
-      const dx = dx0 * .88; // Magic number
-      const dy = y * unit;
+    const z = (1+y/r)/2;
+    const zIndex = Math.ceil(100*z);
 
-      img.style.transform = `translate3d(${dx}px,0,0) scale(${z})`;
-      //img.style.transform = `translate3d(${dx}px,0,0)`;
-      //img.style.opacity = .9;
-      img.style.zIndex = y;
+    //img.style.transform = `translate3d(${dx}px,0,0) scale(${z})`;
+    img.style.transform = `translate3d(${dx}px,0,${z}px) rotate3d(0,1,0,${z*180}deg) scale(${z})`;
 
-    }
+
+    img.style.zIndex = zIndex;
+    img.style.opacity = .998;
+
+    return t.toFixed(1);
 
   });
 }
@@ -121,3 +98,8 @@ function qrt(n) {
   return Math.pow(n, 1/4);
 }
 
+function rootSolver(n) {
+  // x=0,  y=0
+  // x=n/2 y=PI/2
+  // x=n   y=PI
+}
