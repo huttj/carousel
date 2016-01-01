@@ -3,7 +3,7 @@
 const timing =  100;
 const container = document.getElementById('container');
 const pi = Math.PI;
-const count = 20;
+const count = 63;
 
 (function addImages() {
   container.innerHTML = Array.apply(0, Array(count)).map((n,i) => {
@@ -13,7 +13,7 @@ const count = 20;
 
 const images = Array.apply(0,document.getElementsByClassName('photo'));
 
-let width, height, cardWidth, cardHeight;
+let width, height, cardWidth, cardHeight, animating = false;
 
 function calcDims() {
   width = container.offsetWidth;
@@ -24,35 +24,61 @@ function calcDims() {
 calcDims();
 window.addEventListener('resize', calcDims);
 
+let pageX;
 let s = 0;
+let direction = 0;
+let tween;
 
-document.body.addEventListener('dragstart', function (e) {
-  console.log('dragstart', e);
-  s = e.pageX / cardWidth;
-});
+const body = new Hammer(document.body);
 
-document.body.addEventListener('drag', function (e) {
-  console.log('drag', e);
-  s = e.pageX / cardWidth;
-  requestAnimationFrame(render);
-});
+body.on('panstart', e => direction = 0);
 
-document.body.addEventListener('dragend', function (e) {
-  console.log('dragend', e);
-  s = e.pageX / cardWidth;
+body.on('panmove', function(e) {
+  e.preventDefault();
+  if (tween) tween.stop();
+  direction += e.deltaX / cardWidth;
+  s = e.deltaX / cardWidth;
   render();
 });
 
+body.on('panend', e => {
+  const  d = direction > 0 ? 1 : -1;
+  console.log(d, direction);
+  e.preventDefault();
+  var tweening = true;
+  var dist = { x: s };
+  tween = new TWEEN.Tween(dist)
+    .easing(TWEEN.Easing.Exponential.Out)
+    .to({ x: d * Math.abs(e.velocityX * e.deltaX / cardWidth) }, 5000)
+    .onUpdate(function() {
+      s = this.x;
+      render();
+    })
+    .start()
+    .onStop(() => tweening = false)
+    .onComplete(() => tweening = false);
+
+  requestAnimationFrame(animate);
+
+  function animate(time) {
+    if (tweening) {
+      requestAnimationFrame(animate);
+      tween.update(time);
+    }
+  }
+});
+
+body.get('pan').set({ direction: Hammer.DIRECTION_HORIZONTAL });
+body.get('swipe').set({ direction: Hammer.DIRECTION_HORIZONTAL });
+
 render(0);
 
-
-function render(animate) {
+function render() {
   console.log('rendering!');
 
   const n = images.length;
   const r = width / 2;
   const h = n / 2;
-  const rt =
 
   images.map((img, i) => {
 
@@ -67,7 +93,7 @@ function render(animate) {
     const zIndex = Math.ceil(100*z);
 
     //img.style.transform = `translate3d(${dx}px,0,0) scale(${z})`;
-    img.style.transform = `translate3d(${dx}px,0,${z}px) rotate3d(0,1,0,${z*180}deg) scale(${z})`;
+    img.style.transform = `translate3d(${dx}px,0,${z}px) rotate3d(0,1,0,${z*140+40}deg) scale(${z*z*z})`;
 
 
     img.style.zIndex = zIndex;
